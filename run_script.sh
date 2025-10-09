@@ -35,13 +35,20 @@ echo "$ENC_OUTPUT"
 ENCRYPT_VAL=$(printf "%s\n" "$ENC_OUTPUT" | awk -F":" '/^Encrypt:/ {sub(/^ +| +$/,"",$2); print $2; exit}')
 DECRYPT_VAL=$(printf "%s\n" "$ENC_OUTPUT" | awk -F":" '/^Decrypt:/ {sub(/^ +| +$/,"",$2); print $2; exit}')
 
-if [ -z "${ENCRYPT_VAL:-}" ] || [ -z "${DECRYPT_VAL:-}" ]; then
-  echo "Không thể trích xuất Encrypt/Decrypt từ output." >&2
+# Lấy phần bên trong { } của Decrypt
+DECRYPT_CORE=$(printf "%s\n" "$DECRYPT_VAL" | sed -n 's/.*{\(.*\)}.*/\1/p')
+
+# Bỏ tất cả khoảng trắng để đảm bảo không có khoảng trắng thừa
+ENCRYPT_VAL=$(printf "%s" "$ENCRYPT_VAL" | tr -d '\t\r\n ')
+DECRYPT_CORE=$(printf "%s" "$DECRYPT_CORE" | tr -d '\t\r\n ')
+
+if [ -z "${ENCRYPT_VAL:-}" ] || [ -z "${DECRYPT_CORE:-}" ]; then
+  echo "Không thể trích xuất Encrypt/DecryptCore từ output." >&2
   exit 1
 fi
 
-# Append "Encrypt|Decrypt" vào key.html (định dạng JSON hiện có)
-"$PYTHON_BIN" - "$KEY_HTML" "$ENCRYPT_VAL" "$DECRYPT_VAL" << 'PYAPPEND'
+# Append "Encrypt|DecryptCore" vào key.html (định dạng JSON hiện có)
+"$PYTHON_BIN" - "$KEY_HTML" "$ENCRYPT_VAL" "$DECRYPT_CORE" << 'PYAPPEND'
 import json,sys
 path=sys.argv[1]
 enc=sys.argv[2]
