@@ -31,8 +31,9 @@ ENC_OUTPUT=$(MESSAGE="$MESSAGE" "$PYTHON_BIN" "$ENC_PY")
 echo "$ENC_OUTPUT"
 
 # Trích xuất Encrypt và Decrypt từ output
-ENCRYPT_VAL=$(printf "%s\n" "$ENC_OUTPUT" | awk -F": " '/^Encrypt:/ {print $2; exit}')
-DECRYPT_VAL=$(printf "%s\n" "$ENC_OUTPUT" | awk -F": " '/^Decrypt:/ {print $2; exit}')
+# Lấy phần sau dấu ":" và trim khoảng trắng hai bên
+ENCRYPT_VAL=$(printf "%s\n" "$ENC_OUTPUT" | awk -F":" '/^Encrypt:/ {sub(/^ +| +$/,"",$2); print $2; exit}')
+DECRYPT_VAL=$(printf "%s\n" "$ENC_OUTPUT" | awk -F":" '/^Decrypt:/ {sub(/^ +| +$/,"",$2); print $2; exit}')
 
 if [ -z "${ENCRYPT_VAL:-}" ] || [ -z "${DECRYPT_VAL:-}" ]; then
   echo "Không thể trích xuất Encrypt/Decrypt từ output." >&2
@@ -50,6 +51,9 @@ with open(path,'r',encoding='utf-8') as f:
 if not isinstance(data,dict) or 'key' not in data or not isinstance(data['key'],list):
     print('File key.html không đúng cấu trúc JSON mong đợi.', file=sys.stderr)
     sys.exit(1)
+# Trim an toàn trong Python trước khi ghép
+enc = enc.strip()
+dec = dec.strip()
 entry=f"{enc}|{dec}"
 data['key'].append(entry)
 with open(path,'w',encoding='utf-8') as f:
